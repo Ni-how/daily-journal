@@ -1,0 +1,187 @@
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans), -apple-system, system-ui, sans-serif; background-color: #fdfdfd; }
+.app { padding: 1rem; max-width: 720px; margin: 0 auto; }
+.tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; border-bottom: 0.5px solid #e5e5e5; }
+.tab { padding: 8px 16px; font-size: 14px; cursor: pointer; border: none; background: none; color: #888; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab.active { color: #000; border-bottom: 2px solid #000; font-weight: 500; }
+.section { margin-bottom: 1.5rem; }
+.section-title { font-size: 13px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.card { background: #fff; border: 0.5px solid #e5e5e5; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+label { font-size: 14px; color: #666; display: block; margin-bottom: 8px; margin-top: 12px; }
+textarea { width: 100%; border: 0.5px solid #e5e5e5; border-radius: 8px; padding: 8px 10px; font-size: 14px; color: #333; background: #fff; resize: vertical; min-height: 70px; }
+.slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+.slider-label { font-size: 14px; color: #666; width: 80px; flex-shrink: 0; }
+.slider-row input[type=range] { flex: 1; }
+.slider-val { font-size: 14px; font-weight: 500; width: 25px; text-align: right; color: #000; }
+.pill-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.pill { padding: 5px 12px; border-radius: 99px; border: 0.5px solid #e5e5e5; font-size: 13px; cursor: pointer; background: #f9f9f9; color: #666; }
+.pill.selected { background: #000; border-color: #000; color: #fff; font-weight: 500; }
+.btn-save { display: block; width: 100%; padding: 12px; background: #000; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 1rem; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #000; color: #fff; padding: 8px 18px; border-radius: 99px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 99; }
+.toast.show { opacity: 1; }
+</style>
+
+<div class="app">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('journal')">好時光日誌</button>
+    <button class="tab" onclick="switchTab('dashboard')">四象限儀表板</button>
+  </div>
+
+  <div id="tab-journal">
+    <div class="section">
+      <div class="section-title">日期 Date</div>
+      <input type="date" id="entry-date" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+    </div>
+
+    <div class="section">
+      <div class="section-title">活動描述 Activity</div>
+      <div class="card">
+        <textarea id="activity" placeholder="例：開會討論新專案、健身、下午去散步..."></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">投入感 Engagement</div>
+      <div class="card">
+        <div class="slider-row">
+          <span class="slider-label">投入程度</span>
+          <input type="range" min="1" max="10" value="5" id="engagement" oninput="document.getElementById('eng-val').textContent=this.value">
+          <span class="slider-val" id="eng-val">5</span>
+        </div>
+        <label>哪個時刻讓你最投入？</label>
+        <textarea id="engage-note" placeholder="例：和同事腦力激盪時完全忘了時間..."></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">能量感 Energy</div>
+      <div class="card">
+        <div class="slider-row">
+          <span class="slider-label">能量狀態</span>
+          <input type="range" min="1" max="10" value="5" id="energy" oninput="document.getElementById('ene-val').textContent=this.value">
+          <span class="slider-val" id="ene-val">5</span>
+        </div>
+        <label>哪件事讓你最有（或最沒有）能量？</label>
+        <textarea id="energy-note" placeholder="例：午後整理表格讓我昏昏欲睡，但傍晚讀書很充實..."></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">感受標籤 Tags</div>
+      <div class="card">
+        <div class="pill-group" id="tags">
+          <div class="pill" onclick="toggleTag(this)">充實</div>
+          <div class="pill" onclick="toggleTag(this)">疲憊</div>
+          <div class="pill" onclick="toggleTag(this)">好奇</div>
+          <div class="pill" onclick="toggleTag(this)">平靜</div>
+          <div class="pill" onclick="toggleTag(this)">焦慮</div>
+          <div class="pill" onclick="toggleTag(this)">有成就感</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-save" id="save-j-btn" onclick="saveJournal()">儲存並同步日誌</button>
+  </div>
+
+  <div id="tab-dashboard" style="display:none">
+    <div class="section">
+      <div class="section-title">四象限評分 Dashboard</div>
+      <div class="card">
+        <div class="slider-row"><span class="slider-label">工作 Work</span><input type="range" min="1" max="10" value="5" id="d-work" oninput="document.getElementById('work-val').textContent=this.value"><span class="slider-val" id="work-val">5</span></div>
+        <div class="slider-row"><span class="slider-label">生活 Life</span><input type="range" min="1" max="10" value="5" id="d-life" oninput="document.getElementById('life-val').textContent=this.value"><span class="slider-val" id="life-val">5</span></div>
+        <div class="slider-row"><span class="slider-label">愛 Love</span><input type="range" min="1" max="10" value="5" id="d-love" oninput="document.getElementById('love-val').textContent=this.value"><span class="slider-val" id="love-val">5</span></div>
+        <div class="slider-row"><span class="slider-label">健康 Health</span><input type="range" min="1" max="10" value="5" id="d-health" oninput="document.getElementById('health-val').textContent=this.value"><span class="slider-val" id="health-val">5</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">反思與紀錄 Reflection</div>
+      <div class="card">
+        <label>哪個面向讓你覺得最需要改變？</label>
+        <textarea id="dashboard-note" placeholder="例：最近工作滿分，但忘了照顧自己的生活..."></textarea>
+        <label style="margin-top: 15px;">你特別想記錄下來的事情？</label>
+        <textarea id="special-note" placeholder="記錄那些觸動人心或突如其來的靈感"></textarea>
+      </div>
+    </div>
+    <button class="btn-save" id="save-d-btn" onclick="saveDashboard()">儲存並同步儀表板</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">已儲存！</div>
+
+<script>
+const API_URL = "https://hook.eu1.make.com/11xp2mtfmyhm7oe2y2niyjhwleix1m3g";
+
+document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+
+function switchTab(tab) {
+  document.getElementById('tab-journal').style.display = tab === 'journal' ? 'block' : 'none';
+  document.getElementById('tab-dashboard').style.display = tab === 'dashboard' ? 'block' : 'none';
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i===0 && tab==='journal') || (i===1 && tab==='dashboard')));
+}
+
+function toggleTag(el) { el.classList.toggle('selected'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function sendData(data, btnId) {
+  if (API_URL.includes("在此輸入")) {
+    alert("請先設定 API_URL！");
+    return;
+  }
+  const btn = document.getElementById(btnId);
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = "同步中...";
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (response.ok) {
+      showToast("同步成功！資料已寫入 Notion");
+    } else {
+      showToast("同步失敗，請檢查 URL");
+    }
+  } catch (e) {
+    showToast("網路錯誤");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+function saveJournal() {
+  const data = {
+    "日期 Date": document.getElementById('entry-date').value,
+    "活動描述 Activity": document.getElementById('activity').value,
+    "投入程度 Engagement": document.getElementById('engagement').value,
+    "投入反思 Engage Note": document.getElementById('engage-note').value,
+    "能量狀態 Energy": document.getElementById('energy').value,
+    "能量反思 Energy Note": document.getElementById('energy-note').value,
+    "感受標籤 Tags": [...document.querySelectorAll('#tags .pill.selected')].map(p => p.textContent).join(", ")
+  };
+  sendData(data, 'save-j-btn');
+}
+
+function saveDashboard() {
+  const data = {
+    "日期 Date": document.getElementById('entry-date').value,
+    "工作 Work": document.getElementById('d-work').value,
+    "生活 Life": document.getElementById('d-life').value,
+    "愛 Love": document.getElementById('d-love').value,
+    "健康 Health": document.getElementById('d-health').value,
+    "今日反思 Reflection": document.getElementById('dashboard-note').value,
+    "特別記錄 Special Note": document.getElementById('special-note').value
+  };
+  sendData(data, 'save-d-btn');
+}
+</script>
