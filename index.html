@@ -1,7 +1,7 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: var(--font-sans), -apple-system, system-ui, sans-serif; background-color: #fdfdfd; }
-.app { padding: 1rem; max-width: 720px; margin: 0 auto; }
+.app { padding: 1rem; max-width: 720px; margin: 0 auto; padding-bottom: 80px; } /* 留空間給底部按鈕 */
 .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; border-bottom: 0.5px solid #e5e5e5; }
 .tab { padding: 8px 16px; font-size: 14px; cursor: pointer; border: none; background: none; color: #888; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .tab.active { color: #000; border-bottom: 2px solid #000; font-weight: 500; }
@@ -80,7 +80,7 @@ textarea { width: 100%; border: 0.5px solid #e5e5e5; border-radius: 8px; padding
         </div>
       </div>
     </div>
-    <button class="btn-save" id="save-j-btn" onclick="saveJournal()">儲存並同步日誌</button>
+    <button class="btn-save" id="save-j-btn" onclick="saveAll()">儲存今日完整紀錄</button>
   </div>
 
   <div id="tab-dashboard" style="display:none">
@@ -103,7 +103,7 @@ textarea { width: 100%; border: 0.5px solid #e5e5e5; border-radius: 8px; padding
         <textarea id="special-note" placeholder="記錄那些觸動人心或突如其來的靈感"></textarea>
       </div>
     </div>
-    <button class="btn-save" id="save-d-btn" onclick="saveDashboard()">儲存並同步儀表板</button>
+    <button class="btn-save" id="save-d-btn" onclick="saveAll()">儲存今日完整紀錄</button>
   </div>
 </div>
 
@@ -129,15 +129,32 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-async function sendData(data, btnId) {
-  if (API_URL.includes("在此輸入")) {
-    alert("請先設定 API_URL！");
-    return;
-  }
-  const btn = document.getElementById(btnId);
-  btn.disabled = true;
-  const originalText = btn.textContent;
-  btn.textContent = "同步中...";
+// 修改後的統一同步函數
+async function saveAll() {
+  const btnJ = document.getElementById('save-j-btn');
+  const btnD = document.getElementById('save-d-btn');
+  
+  // 禁用按鈕防止重複點擊
+  btnJ.disabled = true; btnD.disabled = true;
+  const originalText = btnJ.textContent;
+  btnJ.textContent = "全同步中..."; btnD.textContent = "全同步中...";
+
+  // 打包所有欄位資料
+  const data = {
+    "日期 Date": document.getElementById('entry-date').value,
+    "活動描述 Activity": document.getElementById('activity').value,
+    "投入程度 Engagement": document.getElementById('engagement').value,
+    "投入反思 Engage Note": document.getElementById('engage-note').value,
+    "能量狀態 Energy": document.getElementById('energy').value,
+    "能量反思 Energy Note": document.getElementById('energy-note').value,
+    "感受標籤 Tags": [...document.querySelectorAll('#tags .pill.selected')].map(p => p.textContent).join(", "),
+    "工作 Work": document.getElementById('d-work').value,
+    "生活 Life": document.getElementById('d-life').value,
+    "愛 Love": document.getElementById('d-love').value,
+    "健康 Health": document.getElementById('d-health').value,
+    "今日反思 Reflection": document.getElementById('dashboard-note').value,
+    "特別記錄 Special Note": document.getElementById('special-note').value
+  };
 
   try {
     const response = await fetch(API_URL, {
@@ -147,41 +164,15 @@ async function sendData(data, btnId) {
     });
 
     if (response.ok) {
-      showToast("同步成功！資料已寫入 Notion");
+      showToast("同步成功！資料已完整合併至 Notion");
     } else {
-      showToast("同步失敗，請檢查 URL");
+      showToast("同步失敗，請檢查 Make Webhook");
     }
   } catch (e) {
     showToast("網路錯誤");
   } finally {
-    btn.disabled = false;
-    btn.textContent = originalText;
+    btnJ.disabled = false; btnD.disabled = false;
+    btnJ.textContent = originalText; btnD.textContent = originalText;
   }
-}
-
-function saveJournal() {
-  const data = {
-    "日期 Date": document.getElementById('entry-date').value,
-    "活動描述 Activity": document.getElementById('activity').value,
-    "投入程度 Engagement": document.getElementById('engagement').value,
-    "投入反思 Engage Note": document.getElementById('engage-note').value,
-    "能量狀態 Energy": document.getElementById('energy').value,
-    "能量反思 Energy Note": document.getElementById('energy-note').value,
-    "感受標籤 Tags": [...document.querySelectorAll('#tags .pill.selected')].map(p => p.textContent).join(", ")
-  };
-  sendData(data, 'save-j-btn');
-}
-
-function saveDashboard() {
-  const data = {
-    "日期 Date": document.getElementById('entry-date').value,
-    "工作 Work": document.getElementById('d-work').value,
-    "生活 Life": document.getElementById('d-life').value,
-    "愛 Love": document.getElementById('d-love').value,
-    "健康 Health": document.getElementById('d-health').value,
-    "今日反思 Reflection": document.getElementById('dashboard-note').value,
-    "特別記錄 Special Note": document.getElementById('special-note').value
-  };
-  sendData(data, 'save-d-btn');
 }
 </script>
