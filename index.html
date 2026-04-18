@@ -129,10 +129,22 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// 修改後的統一同步函數
+// 增加檢查機制後的統一同步函數
 async function saveAll() {
+  const dateVal = document.getElementById('entry-date').value;
+  const activityVal = document.getElementById('activity').value;
   const btnJ = document.getElementById('save-j-btn');
   const btnD = document.getElementById('save-d-btn');
+
+  // 檢查機制：確保日期與活動描述不為空
+  if (!dateVal) {
+    showToast("請選擇日期後再儲存");
+    return;
+  }
+  if (!activityVal.trim()) {
+    showToast("請填寫活動描述後再儲存");
+    return;
+  }
   
   // 禁用按鈕防止重複點擊
   btnJ.disabled = true; btnD.disabled = true;
@@ -141,8 +153,8 @@ async function saveAll() {
 
   // 打包所有欄位資料
   const data = {
-    "日期 Date": document.getElementById('entry-date').value,
-    "活動描述 Activity": document.getElementById('activity').value,
+    "日期 Date": dateVal,
+    "活動描述 Activity": activityVal,
     "投入程度 Engagement": document.getElementById('engagement').value,
     "投入反思 Engage Note": document.getElementById('engage-note').value,
     "能量狀態 Energy": document.getElementById('energy').value,
